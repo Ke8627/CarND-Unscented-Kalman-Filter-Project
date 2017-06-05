@@ -14,6 +14,8 @@ namespace Tools
   */
   VectorXd CalculateRMSE(const vector<VectorXd> &estimations, const vector<VectorXd> &ground_truth);
 
+  VectorXd ConvertPolarToCartesian(const VectorXd& x);
+
 }
 
 #endif /* TOOLS_H_ */

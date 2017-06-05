@@ -36,3 +36,25 @@ VectorXd Tools::CalculateRMSE(const vector<VectorXd> &estimations,
 
   return rmse;
 }
+
+VectorXd Tools::ConvertPolarToCartesian(const VectorXd& x)
+{
+  float rho = x(0);
+  float phi = x(1);
+  float rho_dot = x(2);
+
+  float px = rho * std::cos(phi);
+  float py = rho * std::sin(phi);
+  float vel_abs = 0;
+  float yaw_angle = 0;
+  float yaw_rate = 0;
+
+  VectorXd cartesian(5, 1);
+  cartesian << px,
+               py,
+               vel_abs,
+               yaw_angle,
+               yaw_rate;
+
+  return cartesian;
+}

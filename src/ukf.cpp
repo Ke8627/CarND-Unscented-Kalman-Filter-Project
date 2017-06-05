@@ -1,5 +1,6 @@
 #include "ukf.h"
 #include "Eigen/Dense"
+#include "tools.h"
 #include <iostream>
 
 using namespace std;
@@ -51,6 +52,8 @@ UKF::UKF() {
 
   Hint: one or more values initialized above might be wildly off...
   */
+
+  // TODO: Initialize P_.
 }
 
 UKF::~UKF() {}
@@ -59,13 +62,30 @@ UKF::~UKF() {}
  * @param {MeasurementPackage} meas_package The latest measurement data of
  * either radar or laser.
  */
-void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
+void UKF::ProcessMeasurement(MeasurementPackage measurement) {
   /**
   TODO:
 
   Complete this function! Make sure you switch between lidar and radar
   measurements.
   */
+  if (!is_initialized_)
+  {
+    if (measurement.sensor_type_ == MeasurementPackage::RADAR)
+    {
+      x_ = Tools::ConvertPolarToCartesian(measurement.raw_measurements_);
+    }
+    else if (measurement.sensor_type_ == MeasurementPackage::LASER)
+    {
+      x_ << measurement.raw_measurements_(0),
+            measurement.raw_measurements_[1],
+            0,
+            0,
+            0;
+    }
+
+    is_initialized_ = true;
+  }
 }
 
 /**
