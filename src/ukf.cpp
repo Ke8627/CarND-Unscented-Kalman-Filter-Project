@@ -85,7 +85,19 @@ void UKF::ProcessMeasurement(MeasurementPackage measurement) {
     }
 
     is_initialized_ = true;
+    time_us_ = measurement.timestamp_;
+    return;
   }
+
+  if (measurement.sensor_type_ == MeasurementPackage::RADAR)
+  {
+    UpdateRadar(measurement);
+  }
+  else if (measurement.sensor_type_ == MeasurementPackage::LASER)
+  {
+    UpdateLidar(measurement);
+  }
+
 }
 
 /**
