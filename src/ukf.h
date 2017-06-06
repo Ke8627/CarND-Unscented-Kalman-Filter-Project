@@ -86,7 +86,7 @@ public:
    * matrix
    * @param delta_t Time between k and k+1 in s
    */
-  void Prediction(double delta_t);
+  MatrixXd Prediction(double delta_t);
 
   /**
    * Updates the state and the state covariance matrix using a laser measurement
@@ -98,7 +98,9 @@ public:
    * Updates the state and the state covariance matrix using a radar measurement
    * @param meas_package The measurement at k+1
    */
-  void UpdateRadar(const MeasurementPackage& measurement);
+  void UpdateRadar(const MeasurementPackage& measurement, const MatrixXd& Xsig_pred);
+
+  MatrixXd TransformSigmaPointsToRadarSpace(const MatrixXd& Xsig_pred);
 
   MatrixXd GenerateSigmaPoints();
 
