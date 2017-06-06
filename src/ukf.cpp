@@ -26,10 +26,12 @@ UKF::UKF() {
   lambda_ = 3 - n_x_;
 
   // initial state vector
-  x_ = VectorXd(5);
+  x_ = VectorXd(n_x_);
 
   // initial covariance matrix
-  P_ = MatrixXd(5, 5);
+  P_ = MatrixXd(n_x_, n_x_);
+
+  Xsig_pred_ = MatrixXd(n_x_, 2 * n_aug_ + 1);
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
   std_a_ = 30;
@@ -127,7 +129,54 @@ void UKF::Prediction(double delta_t)
   vector, x_. Predict sigma points, the state, and the state covariance matrix.
   */
 
-  auto XSig = GenerateSigmaPoints();
+  auto Xsig_aug = GenerateAugmentedSigmaPoints();
+
+  // Predict sigma points.
+  for (int i = 0; i < 2 * n_aug_ + 1; i++)
+  {
+    // Extract values for better readability.
+    double p_x = Xsig_aug(0, i);
+    double p_y = Xsig_aug(1, i);
+    double v = Xsig_aug(2, i);
+    double yaw = Xsig_aug(3, i);
+    double yawd = Xsig_aug(4, i);
+    double nu_a = Xsig_aug(5, i);
+    double nu_yawdd = Xsig_aug(6, i);
+
+    // Predicted state values.
+    double px_p, py_p;
+
+    // Avoid division by zero.
+    if (fabs(yawd) > 0.001)
+    {
+        px_p = p_x + v/yawd * (sin(yaw + yawd * delta_t) - sin(yaw));
+        py_p = p_y + v/yawd * (cos(yaw) - cos(yaw + yawd * delta_t));
+    }
+    else
+    {
+        px_p = p_x + v * delta_t * cos(yaw);
+        py_p = p_y + v * delta_t * sin(yaw);
+    }
+
+    double v_p = v;
+    double yaw_p = yaw + yawd * delta_t;
+    double yawd_p = yawd;
+
+    // Add noise.
+    px_p = px_p + 0.5 * nu_a * delta_t * delta_t * cos(yaw);
+    py_p = py_p + 0.5 *nu_a * delta_t * delta_t * sin(yaw);
+    v_p = v_p + nu_a * delta_t;
+
+    yaw_p = yaw_p + 0.5 * nu_yawdd * delta_t * delta_t;
+    yawd_p = yawd_p + nu_yawdd * delta_t;
+
+    // Write predicted sigma point into proper column.
+    Xsig_pred_(0, i) = px_p;
+    Xsig_pred_(1, i) = py_p;
+    Xsig_pred_(2, i) = v_p;
+    Xsig_pred_(3, i) = yaw_p;
+    Xsig_pred_(4, i) = yawd_p;
+  }
 }
 
 MatrixXd UKF::GenerateSigmaPoints()
