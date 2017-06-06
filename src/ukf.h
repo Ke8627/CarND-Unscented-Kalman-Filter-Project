@@ -28,9 +28,6 @@ public:
   ///* state covariance matrix
   MatrixXd P_;
 
-  ///* predicted sigma points matrix
-  MatrixXd Xsig_pred_;
-
   ///* time when the state is true, in us
   long long time_us_;
 
@@ -106,6 +103,10 @@ public:
   MatrixXd GenerateSigmaPoints();
 
   MatrixXd GenerateAugmentedSigmaPoints();
+
+  MatrixXd PredictSigmaPoints(double delta_t);
+
+  void PredictMeanAndCovariance(const MatrixXd& Xsig_pred);
 };
 
 #endif /* UKF_H */
