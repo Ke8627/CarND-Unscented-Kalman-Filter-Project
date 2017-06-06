@@ -28,9 +28,9 @@ UKF::UKF() {
   // Initial state vector
   x_ = VectorXd(n_x_);
 
-  // TODO: Initialize P_.
+  // TODO: Improve P_ initialization.
   // Initial covariance matrix
-  P_ = MatrixXd(n_x_, n_x_);
+  P_ = MatrixXd::Identity(n_x_, n_x_);
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
   std_a_ = 30;
@@ -207,7 +207,6 @@ static void NormalizeAngle(double& angle)
 
 void UKF::PredictMeanAndCovariance(const MatrixXd& Xsig_pred)
 {
-
   // Predicted state mean
   x_.fill(0.0);
   // Iterate over sigma points.
