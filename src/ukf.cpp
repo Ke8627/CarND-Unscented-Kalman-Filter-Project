@@ -82,12 +82,6 @@ UKF::~UKF() {}
  */
 void UKF::ProcessMeasurement(const MeasurementPackage& measurement)
 {
-  /**
-  TODO:
-
-  Complete this function! Make sure you switch between lidar and radar
-  measurements.
-  */
   if (!is_initialized_)
   {
     if (measurement.sensor_type_ == MeasurementPackage::RADAR)
@@ -112,6 +106,7 @@ void UKF::ProcessMeasurement(const MeasurementPackage& measurement)
 
   auto Xsig_pred = Prediction(delta_t);
 
+  // Switch between radar and lidar measurements.
   if (measurement.sensor_type_ == MeasurementPackage::RADAR)
   {
     UpdateRadar(measurement, Xsig_pred);
@@ -343,14 +338,10 @@ MatrixXd UKF::TransformSigmaPointsToRadarSpace(const MatrixXd& Xsig_pred)
  */
 void UKF::UpdateRadar(const MeasurementPackage& measurement, const MatrixXd& Xsig_pred)
 {
-  /**
-  TODO:
+  // Use radar data to update the belief about the object's position.
+  // Modify the state vector, x_, and covariance, P_.
 
-  Complete this function! Use radar data to update the belief about the object's
-  position. Modify the state vector, x_, and covariance, P_.
-
-  You'll also need to calculate the radar NIS.
-  */
+  // TODO: Calculate the radar NIS.
 
   static const int n_z = c_radarMeasurementSize;
 
@@ -384,4 +375,36 @@ void UKF::UpdateRadar(const MeasurementPackage& measurement, const MatrixXd& Xsi
           0, std_radphi_ * std_radphi_, 0,
           0, 0, std_radrd_ * std_radrd_;
   S = S + R;
+
+  // Create matrix for cross correlation Tc.
+  MatrixXd Tc = MatrixXd(n_x_, n_z);
+
+  // Calculate cross correlation matrix.
+  Tc.fill(0.0);
+  for (int i = 0; i < 2 * n_aug_ + 1; i++)
+  {
+    // Residual
+    VectorXd z_diff = Zsig.col(i) - z_pred;
+
+    NormalizeAngle(z_diff(1));
+
+    // State difference
+    VectorXd x_diff = Xsig_pred.col(i) - x_;
+
+    NormalizeAngle(x_diff(3));
+
+    Tc = Tc + weights_(i) * x_diff * z_diff.transpose();
+  }
+
+  // Kalman gain K
+  MatrixXd K = Tc * S.inverse();
+
+  // Residual
+  VectorXd z_diff = measurement.raw_measurements_ - z_pred;
+
+  NormalizeAngle(z_diff(1));
+
+  // Update state mean and covariance matrix.
+  x_ = x_ + K * z_diff;
+  P_ = P_ - K * S * K.transpose();
 }
