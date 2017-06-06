@@ -18,6 +18,11 @@ UKF::UKF() {
   // if this is false, radar measurements will be ignored (except during init)
   use_radar_ = true;
 
+  n_x_ = 5;
+
+  // define spreading parameter
+  lambda_ = 3 - n_x_;
+
   // initial state vector
   x_ = VectorXd(5);
 
@@ -119,6 +124,29 @@ void UKF::Prediction(double delta_t)
   Complete this function! Estimate the object's location. Modify the state
   vector, x_. Predict sigma points, the state, and the state covariance matrix.
   */
+
+  auto XSig = GenerateSigmaPoints();
+}
+
+MatrixXd UKF::GenerateSigmaPoints()
+{
+  // Create sigma point matrix.
+  MatrixXd Xsig = MatrixXd(n_x_, 2 * n_x_ + 1);
+
+  // Calculate square root of P.
+  MatrixXd A = P_.llt().matrixL();
+
+  // Set first column of sigma point matrix.
+  Xsig.col(0) = x_;
+
+  // Set remaining sigma points.
+  for (int i = 0; i < n_x_; i++)
+  {
+    Xsig.col(i + 1)        = x_ + sqrt(lambda_ + n_x_) * A.col(i);
+    Xsig.col(i + 1 + n_x_) = x_ - sqrt(lambda_ + n_x_) * A.col(i);
+  }
+
+  return Xsig;
 }
 
 /**
