@@ -33,10 +33,10 @@ UKF::UKF() {
   P_ = MatrixXd::Identity(n_x_, n_x_);
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
-  std_a_ = 30;
+  std_a_ = 2;
 
   // Process noise standard deviation yaw acceleration in rad/s^2
-  std_yawdd_ = 30;
+  std_yawdd_ = 0.2;
 
   // Laser measurement noise standard deviation position1 in m
   std_laspx_ = 0.15;
@@ -82,6 +82,8 @@ UKF::~UKF() {}
  */
 void UKF::ProcessMeasurement(const MeasurementPackage& measurement)
 {
+  std::cout << "DEBUG: " << __func__ << std::endl;
+
   if (!is_initialized_)
   {
     if (measurement.sensor_type_ == MeasurementPackage::RADAR)
@@ -126,6 +128,8 @@ void UKF::ProcessMeasurement(const MeasurementPackage& measurement)
  */
 MatrixXd UKF::Prediction(double delta_t)
 {
+  std::cout << "DEBUG: " << __func__ << std::endl;
+
   // Estimate the object's location.
 
   auto Xsig_pred = PredictSigmaPoints(delta_t);
@@ -137,6 +141,8 @@ MatrixXd UKF::Prediction(double delta_t)
 
 MatrixXd UKF::PredictSigmaPoints(double delta_t)
 {
+  std::cout << "DEBUG: " << __func__ << std::endl;
+
   auto Xsig_aug = GenerateAugmentedSigmaPoints();
 
   auto Xsig_pred = MatrixXd(n_x_, 2 * n_aug_ + 1);
@@ -193,20 +199,24 @@ MatrixXd UKF::PredictSigmaPoints(double delta_t)
 
 static void NormalizeAngle(double& angle)
 {
+  std::cout << "DEBUG: " << __func__ << angle << std::endl;
+
   static const double two_pi = 2 * M_PI;
 
-  while (angle > M_PI)
-  {
-    angle -= two_pi;
-  }
-  while (angle < -M_PI)
-  {
-    angle += two_pi;
-  }
+  // Shift from [-pi, pi] to [0, 2pi].
+  angle += M_PI;
+
+  // Normalize to [0, 2pi].
+  double remainder = fmod(angle, two_pi);
+
+  // Shift from [0, 2pi] to [-pi, pi].
+  angle = remainder - M_PI;
 }
 
 void UKF::PredictMeanAndCovariance(const MatrixXd& Xsig_pred)
 {
+  std::cout << "DEBUG: " << __func__ << std::endl;
+
   // Predicted state mean
   x_.fill(0.0);
   // Iterate over sigma points.
@@ -230,6 +240,8 @@ void UKF::PredictMeanAndCovariance(const MatrixXd& Xsig_pred)
 
 MatrixXd UKF::GenerateSigmaPoints()
 {
+  std::cout << "DEBUG: " << __func__ << std::endl;
+
   // Create sigma point matrix.
   MatrixXd Xsig = MatrixXd(n_x_, 2 * n_x_ + 1);
 
@@ -251,6 +263,8 @@ MatrixXd UKF::GenerateSigmaPoints()
 
 MatrixXd UKF::GenerateAugmentedSigmaPoints()
 {
+  std::cout << "DEBUG: " << __func__ << std::endl;
+
   // Create augmented mean vector.
   VectorXd x_aug = VectorXd(n_aug_);
 
@@ -263,13 +277,13 @@ MatrixXd UKF::GenerateAugmentedSigmaPoints()
   // Create augmented mean state.
   x_aug.head(n_x_) = x_;
   x_aug(n_x_) = 0;
-  x_aug(n_aug_ + 1) = 0;
+  x_aug(n_x_ + 1) = 0;
 
   // Create augmented covariance matrix.
   P_aug.fill(0.0);
   P_aug.topLeftCorner(n_x_,n_x_) = P_;
   P_aug(n_x_ , n_x_) = std_a_ * std_a_;
-  P_aug(n_aug_ + 1, n_aug_ + 1) = std_yawdd_ * std_yawdd_;
+  P_aug(n_x_ + 1, n_x_ + 1) = std_yawdd_ * std_yawdd_;
 
   // Create square root matrix.
   MatrixXd L = P_aug.llt().matrixL();
@@ -282,6 +296,8 @@ MatrixXd UKF::GenerateAugmentedSigmaPoints()
     Xsig_aug.col(i + 1 + n_aug_) = x_aug - sqrt(lambda_ + n_aug_) * L.col(i);
   }
 
+  std::cout << "DEBUG: return " << __func__ << std::endl;
+
   return Xsig_aug;
 }
 
@@ -291,6 +307,8 @@ MatrixXd UKF::GenerateAugmentedSigmaPoints()
  */
 void UKF::UpdateLidar(const MeasurementPackage& measurement)
 {
+  std::cout << "DEBUG: " << __func__ << std::endl;
+
   /**
   TODO:
 
@@ -305,6 +323,8 @@ static const int c_radarMeasurementSize = 3;
 
 MatrixXd UKF::TransformSigmaPointsToRadarSpace(const MatrixXd& Xsig_pred)
 {
+  std::cout << "DEBUG: " << __func__ << std::endl;
+
   MatrixXd Zsig = MatrixXd(c_radarMeasurementSize, 2 * n_aug_ + 1);
 
   // Transform sigma points into measurement space
@@ -319,13 +339,22 @@ MatrixXd UKF::TransformSigmaPointsToRadarSpace(const MatrixXd& Xsig_pred)
     double v1 = cos(yaw) * v;
     double v2 = sin(yaw) * v;
 
+    double c1 = sqrt(p_x * p_x + p_y * p_y);
+
+    // TODO: Improve solution for division by zero.
+    // Check division by zero.
+    if (fabs(c1) < 0.0001)
+    {
+      throw std::runtime_error("__func__ failed due to division by zero.");
+    }
+
     // Measurement model
     // r
-    Zsig(0, i) = sqrt(p_x * p_x + p_y * p_y);
+    Zsig(0, i) = c1;
     // phi
     Zsig(1, i) = atan2(p_y, p_x);
     // r_dot
-    Zsig(2, i) = (p_x * v1 + p_y * v2 ) / sqrt(p_x * p_x + p_y * p_y);
+    Zsig(2, i) = (p_x * v1 + p_y * v2 ) / c1;
   }
 
   return Zsig;
@@ -337,6 +366,8 @@ MatrixXd UKF::TransformSigmaPointsToRadarSpace(const MatrixXd& Xsig_pred)
  */
 void UKF::UpdateRadar(const MeasurementPackage& measurement, const MatrixXd& Xsig_pred)
 {
+  std::cout << "DEBUG: " << __func__ << std::endl;
+
   // Use radar data to update the belief about the object's position.
   // Modify the state vector, x_, and covariance, P_.
 
