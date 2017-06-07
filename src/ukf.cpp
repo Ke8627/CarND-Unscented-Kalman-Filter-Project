@@ -234,27 +234,6 @@ void UKF::PredictMeanAndCovariance(const MatrixXd& Xsig_pred)
   }
 }
 
-MatrixXd UKF::GenerateSigmaPoints()
-{
-  // Create sigma point matrix.
-  MatrixXd Xsig = MatrixXd(n_x_, 2 * n_x_ + 1);
-
-  // Calculate square root of P.
-  const MatrixXd A = P_.llt().matrixL();
-
-  // Set first column of sigma point matrix.
-  Xsig.col(0) = x_;
-
-  // Set remaining sigma points.
-  for (int i = 0; i < n_x_; i++)
-  {
-    Xsig.col(i + 1)        = x_ + sqrt(lambda_ + n_x_) * A.col(i);
-    Xsig.col(i + 1 + n_x_) = x_ - sqrt(lambda_ + n_x_) * A.col(i);
-  }
-
-  return Xsig;
-}
-
 MatrixXd UKF::GenerateAugmentedSigmaPoints()
 {
   // Create augmented mean vector.

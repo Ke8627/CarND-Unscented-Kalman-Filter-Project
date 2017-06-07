@@ -107,8 +107,6 @@ public:
 
   MatrixXd TransformSigmaPointsToRadarSpace(const MatrixXd& Xsig_pred);
 
-  MatrixXd GenerateSigmaPoints();
-
   MatrixXd GenerateAugmentedSigmaPoints();
 
   MatrixXd PredictSigmaPoints(double delta_t);
