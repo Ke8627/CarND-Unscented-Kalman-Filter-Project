@@ -19,7 +19,7 @@ UKF::UKF() {
   use_laser_ = true;
 
   // If this is false, radar measurements will be ignored (except during init)
-  use_radar_ = false;
+  use_radar_ = true;
 
   n_x_ = 5;
 
