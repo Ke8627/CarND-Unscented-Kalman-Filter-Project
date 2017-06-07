@@ -403,11 +403,10 @@ MatrixXd UKF::TransformSigmaPointsToRadarSpace(const MatrixXd& Xsig_pred)
 
     double c1 = sqrt(p_x * p_x + p_y * p_y);
 
-    // TODO: Improve solution for division by zero.
-    // Check division by zero.
     if (fabs(c1) < 0.0001)
     {
-      throw std::runtime_error("__func__ failed due to division by zero.");
+      c1 = 0.0001;
+      std::cout << "DEBUG: Avoided dvision by zero." << std::endl;
     }
 
     // Measurement model
