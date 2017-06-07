@@ -287,8 +287,6 @@ MatrixXd UKF::TransformSigmaPointsToLidarSpace(const MatrixXd& Xsig_pred)
     // Extract values for better readability.
     double p_x = Xsig_pred(0, i);
     double p_y = Xsig_pred(1, i);
-    double v  = Xsig_pred(2, i);
-    double yaw = Xsig_pred(3, i);
 
     // Measurement model
     Zsig(0, i) = p_x;
@@ -491,13 +489,13 @@ void UKF::NormalizeAngle(double& angle)
 {
   static const double two_pi = 2 * M_PI;
 
-  // Shift from [-pi, pi] to [0, 2pi].
+  // Shift from [-pi, pi) to [0, 2pi).
   angle += M_PI;
 
-  // Normalize to [0, 2pi].
+  // Normalize to [0, 2pi).
   double remainder = fmod(angle, two_pi);
 
-  // Shift from [0, 2pi] to [-pi, pi].
+  // Shift from [0, 2pi) to [-pi, pi).
   angle = remainder - M_PI;
 }
 
