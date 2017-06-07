@@ -264,38 +264,6 @@ void UKF::PredictMeanAndCovariance(const MatrixXd& Xsig_pred)
   }
 }
 
-VectorXd UKF::GetMeanPredictedMeasurement(const MatrixXd& Zsig, int n_z)
-{
-  // Mean predicted measurement
-  VectorXd z_pred = VectorXd(n_z);
-  z_pred.fill(0.0);
-  for (int i = 0; i < 2 * n_aug_ + 1; i++)
-  {
-    z_pred = z_pred + weights_(i) * Zsig.col(i);
-  }
-
-  return z_pred;
-}
-
-MatrixXd UKF::TransformSigmaPointsToLidarSpace(const MatrixXd& Xsig_pred)
-{
-  MatrixXd Zsig = MatrixXd(c_lidarMeasurementSize, 2 * n_aug_ + 1);
-
-  // Transform sigma points into measurement space
-  for (int i = 0; i < 2 * n_aug_ + 1; i++)
-  {
-    // Extract values for better readability.
-    double p_x = Xsig_pred(0, i);
-    double p_y = Xsig_pred(1, i);
-
-    // Measurement model
-    Zsig(0, i) = p_x;
-    Zsig(1, i) = p_y;
-  }
-
-  return Zsig;
-}
-
 /**
  * Updates the state and the state covariance matrix using a laser measurement.
  * @param {MeasurementPackage} meas_package
@@ -327,6 +295,62 @@ void UKF::UpdateLidar(const MeasurementPackage& measurement, const MatrixXd& Xsi
                         z_pred,
                         S,
                         measurement.raw_measurements_);
+}
+
+MatrixXd UKF::TransformSigmaPointsToLidarSpace(const MatrixXd& Xsig_pred)
+{
+  MatrixXd Zsig = MatrixXd(c_lidarMeasurementSize, 2 * n_aug_ + 1);
+
+  // Transform sigma points into measurement space
+  for (int i = 0; i < 2 * n_aug_ + 1; i++)
+  {
+    // Extract values for better readability.
+    double p_x = Xsig_pred(0, i);
+    double p_y = Xsig_pred(1, i);
+
+    // Measurement model
+    Zsig(0, i) = p_x;
+    Zsig(1, i) = p_y;
+  }
+
+  return Zsig;
+}
+
+/**
+ * Updates the state and the state covariance matrix using a radar measurement.
+ * @param {MeasurementPackage} meas_package
+ */
+void UKF::UpdateRadar(const MeasurementPackage& measurement, const MatrixXd& Xsig_pred)
+{
+  // Use radar data to update the belief about the object's position.
+  // Modify the state vector, x_, and covariance, P_.
+
+  // TODO: Calculate the radar NIS.
+
+  static const int n_z = c_radarMeasurementSize;
+
+  const auto Zsig = TransformSigmaPointsToRadarSpace(Xsig_pred);
+
+  const auto z_pred = GetMeanPredictedMeasurement(Zsig, n_z);
+
+  const int angle_index = 1;
+  const auto S = CalculateMeasurementCovariance(Zsig,
+                                                z_pred,
+                                                R_radar_,
+                                                n_z,
+                                                &angle_index);
+
+  const auto Tc = CalculateCrossCorrelation(Zsig,
+                                            z_pred,
+                                            Xsig_pred,
+                                            n_z,
+                                            &angle_index);
+
+  UpdateFromMeasurement(Tc,
+                        z_pred,
+                        S,
+                        measurement.raw_measurements_,
+                        &angle_index);
 }
 
 MatrixXd UKF::TransformSigmaPointsToRadarSpace(const MatrixXd& Xsig_pred)
@@ -363,6 +387,19 @@ MatrixXd UKF::TransformSigmaPointsToRadarSpace(const MatrixXd& Xsig_pred)
   }
 
   return Zsig;
+}
+
+VectorXd UKF::GetMeanPredictedMeasurement(const MatrixXd& Zsig, int n_z)
+{
+  // Mean predicted measurement
+  VectorXd z_pred = VectorXd(n_z);
+  z_pred.fill(0.0);
+  for (int i = 0; i < 2 * n_aug_ + 1; i++)
+  {
+    z_pred = z_pred + weights_(i) * Zsig.col(i);
+  }
+
+  return z_pred;
 }
 
 MatrixXd UKF::CalculateMeasurementCovariance(const MatrixXd& Zsig,
@@ -446,43 +483,6 @@ void UKF::UpdateFromMeasurement(const MatrixXd& Tc,
   // Update state mean and covariance matrix.
   x_ = x_ + K * z_diff;
   P_ = P_ - K * S * K.transpose();
-}
-
-/**
- * Updates the state and the state covariance matrix using a radar measurement.
- * @param {MeasurementPackage} meas_package
- */
-void UKF::UpdateRadar(const MeasurementPackage& measurement, const MatrixXd& Xsig_pred)
-{
-  // Use radar data to update the belief about the object's position.
-  // Modify the state vector, x_, and covariance, P_.
-
-  // TODO: Calculate the radar NIS.
-
-  static const int n_z = c_radarMeasurementSize;
-
-  const auto Zsig = TransformSigmaPointsToRadarSpace(Xsig_pred);
-
-  const auto z_pred = GetMeanPredictedMeasurement(Zsig, n_z);
-
-  const int angle_index = 1;
-  const auto S = CalculateMeasurementCovariance(Zsig,
-                                                z_pred,
-                                                R_radar_,
-                                                n_z,
-                                                &angle_index);
-
-  const auto Tc = CalculateCrossCorrelation(Zsig,
-                                            z_pred,
-                                            Xsig_pred,
-                                            n_z,
-                                            &angle_index);
-
-  UpdateFromMeasurement(Tc,
-                        z_pred,
-                        S,
-                        measurement.raw_measurements_,
-                        &angle_index);
 }
 
 void UKF::NormalizeAngle(double& angle)
