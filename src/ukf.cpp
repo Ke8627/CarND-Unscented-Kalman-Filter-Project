@@ -19,7 +19,7 @@ UKF::UKF() {
   use_laser_ = true;
 
   // If this is false, radar measurements will be ignored (except during init)
-  use_radar_ = true;
+  use_radar_ = false;
 
   n_x_ = 5;
 
@@ -114,14 +114,22 @@ void UKF::ProcessMeasurement(const MeasurementPackage& measurement)
   // Switch between radar and lidar measurements.
   if (measurement.sensor_type_ == MeasurementPackage::RADAR)
   {
-    UpdateRadar(measurement, Xsig_pred);
+    if (use_radar_)
+    {
+      UpdateRadar(measurement, Xsig_pred);
+
+      time_us_ = measurement.timestamp_;
+    }
   }
   else if (measurement.sensor_type_ == MeasurementPackage::LASER)
   {
-    UpdateLidar(measurement, Xsig_pred);
-  }
+    if (use_laser_)
+    {
+      UpdateLidar(measurement, Xsig_pred);
 
-  time_us_ = measurement.timestamp_;
+      time_us_ = measurement.timestamp_;
+    }
+  }
 }
 
 /**
