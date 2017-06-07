@@ -115,7 +115,7 @@ void UKF::ProcessMeasurement(const MeasurementPackage& measurement)
 
   std::cout << "DEBUG: delta_t = " << delta_t << std::endl;
 
-  auto Xsig_pred = Prediction(delta_t);
+  const auto Xsig_pred = Prediction(delta_t);
 
   std::cout << "DEBUG: Xsig_pred = " << Xsig_pred << std::endl;
 
@@ -143,7 +143,7 @@ MatrixXd UKF::Prediction(double delta_t)
 
   // Estimate the object's location.
 
-  auto Xsig_pred = PredictSigmaPoints(delta_t);
+  const auto Xsig_pred = PredictSigmaPoints(delta_t);
 
   PredictMeanAndCovariance(Xsig_pred);
 
@@ -154,7 +154,7 @@ MatrixXd UKF::PredictSigmaPoints(double delta_t)
 {
   std::cout << "DEBUG: " << __func__ << std::endl;
 
-  auto Xsig_aug = GenerateAugmentedSigmaPoints();
+  const auto Xsig_aug = GenerateAugmentedSigmaPoints();
 
   auto Xsig_pred = MatrixXd(n_x_, 2 * n_aug_ + 1);
 
@@ -243,6 +243,7 @@ void UKF::PredictMeanAndCovariance(const MatrixXd& Xsig_pred)
   {
     // Calculate state difference.
     VectorXd x_diff = Xsig_pred.col(i) - x_;
+
     NormalizeAngle(x_diff(3));
 
     P_ = P_ + weights_(i) * x_diff * x_diff.transpose();
@@ -257,7 +258,7 @@ MatrixXd UKF::GenerateSigmaPoints()
   MatrixXd Xsig = MatrixXd(n_x_, 2 * n_x_ + 1);
 
   // Calculate square root of P.
-  MatrixXd A = P_.llt().matrixL();
+  const MatrixXd A = P_.llt().matrixL();
 
   // Set first column of sigma point matrix.
   Xsig.col(0) = x_;
@@ -297,7 +298,7 @@ MatrixXd UKF::GenerateAugmentedSigmaPoints()
   P_aug(n_x_ + 1, n_x_ + 1) = std_yawdd_ * std_yawdd_;
 
   // Create square root matrix.
-  MatrixXd L = P_aug.llt().matrixL();
+  const MatrixXd L = P_aug.llt().matrixL();
 
   // Create augmented sigma points.
   Xsig_aug.col(0) = x_aug;
@@ -367,19 +368,19 @@ void UKF::UpdateLidar(const MeasurementPackage& measurement, const MatrixXd& Xsi
 
   const int n_z = c_lidarMeasurementSize;
 
-  auto Zsig = TransformSigmaPointsToLidarSpace(Xsig_pred);
+  const auto Zsig = TransformSigmaPointsToLidarSpace(Xsig_pred);
 
-  auto z_pred = GetMeanPredictedMeasurement(Zsig, n_z);
+  const auto z_pred = GetMeanPredictedMeasurement(Zsig, n_z);
 
-  auto S = CalculateMeasurementCovariance(Zsig,
-                                          z_pred,
-                                          R_lidar_,
-                                          n_z);
+  const auto S = CalculateMeasurementCovariance(Zsig,
+                                                z_pred,
+                                                R_lidar_,
+                                                n_z);
 
-  auto Tc = CalculateCrossCorrelation(Zsig,
-                                      z_pred,
-                                      Xsig_pred,
-                                      n_z);
+  const auto Tc = CalculateCrossCorrelation(Zsig,
+                                            z_pred,
+                                            Xsig_pred,
+                                            n_z);
 
   UpdateFromMeasurement(Tc,
                         z_pred,
@@ -429,7 +430,7 @@ MatrixXd UKF::CalculateMeasurementCovariance(const MatrixXd& Zsig,
                                              const VectorXd& z_pred,
                                              const MatrixXd& R,
                                              int n_z,
-                                             int* angle_index)
+                                             const int* angle_index)
 {
   std::cout << "DEBUG: " << __func__ << std::endl;
 
@@ -463,7 +464,7 @@ MatrixXd UKF::CalculateCrossCorrelation(const MatrixXd& Zsig,
                                         const VectorXd& z_pred,
                                         const MatrixXd& Xsig_pred,
                                         int n_z,
-                                        int* angle_index)
+                                        const int* angle_index)
 {
   std::cout << "DEBUG: " << __func__ << std::endl;
 
@@ -497,7 +498,7 @@ void UKF::UpdateFromMeasurement(const MatrixXd& Tc,
                                 const VectorXd& z_pred,
                                 const MatrixXd& S,
                                 const VectorXd& raw_measurements,
-                                int* angle_index)
+                                const int* angle_index)
 {
   std::cout << "DEBUG: " << __func__ << std::endl;
 
@@ -505,7 +506,7 @@ void UKF::UpdateFromMeasurement(const MatrixXd& Tc,
   std::cout << "DEBUG: S = " << S << std::endl;
 
   // Kalman gain K
-  MatrixXd K = Tc * S.inverse();
+  const MatrixXd K = Tc * S.inverse();
 
   // Residual
   VectorXd z_diff = raw_measurements - z_pred;
@@ -538,22 +539,22 @@ void UKF::UpdateRadar(const MeasurementPackage& measurement, const MatrixXd& Xsi
 
   static const int n_z = c_radarMeasurementSize;
 
-  auto Zsig = TransformSigmaPointsToRadarSpace(Xsig_pred);
+  const auto Zsig = TransformSigmaPointsToRadarSpace(Xsig_pred);
 
-  auto z_pred = GetMeanPredictedMeasurement(Zsig, n_z);
+  const auto z_pred = GetMeanPredictedMeasurement(Zsig, n_z);
 
-  int angle_index = 1;
-  auto S = CalculateMeasurementCovariance(Zsig,
-                                          z_pred,
-                                          R_radar_,
-                                          n_z,
-                                          &angle_index);
+  const int angle_index = 1;
+  const auto S = CalculateMeasurementCovariance(Zsig,
+                                                z_pred,
+                                                R_radar_,
+                                                n_z,
+                                                &angle_index);
 
-  auto Tc = CalculateCrossCorrelation(Zsig,
-                                      z_pred,
-                                      Xsig_pred,
-                                      n_z,
-                                      &angle_index);
+  const auto Tc = CalculateCrossCorrelation(Zsig,
+                                            z_pred,
+                                            Xsig_pred,
+                                            n_z,
+                                            &angle_index);
 
   UpdateFromMeasurement(Tc,
                         z_pred,

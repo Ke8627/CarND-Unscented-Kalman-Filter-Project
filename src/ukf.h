@@ -121,19 +121,19 @@ public:
                                           const VectorXd& z_pred,
                                           const MatrixXd& R,
                                           int n_z,
-                                          int* angle_index = nullptr);
+                                          const int* angle_index = nullptr);
 
   MatrixXd CalculateCrossCorrelation(const MatrixXd& Zsig,
                                      const VectorXd& z_pred,
                                      const MatrixXd& Xsig_pred,
                                      int n_z,
-                                     int* angle_index = nullptr);
+                                     const int* angle_index = nullptr);
 
   void UpdateFromMeasurement(const MatrixXd& Tc,
                              const VectorXd& z_pred,
                              const MatrixXd& S,
                              const VectorXd& raw_measurements,
-                             int* angle_index = nullptr);
+                             const int* angle_index = nullptr);
 };
 
 #endif /* UKF_H */
