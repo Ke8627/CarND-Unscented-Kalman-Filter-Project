@@ -85,10 +85,6 @@ UKF::~UKF() {}
  */
 void UKF::ProcessMeasurement(const MeasurementPackage& measurement)
 {
-  std::cout << "DEBUG: " << __func__ << std::endl;
-
-  std::cout << "DEBUG: x_ = " << x_ << std::endl;
-
   if (!is_initialized_)
   {
     if (measurement.sensor_type_ == MeasurementPackage::RADAR)
@@ -113,11 +109,7 @@ void UKF::ProcessMeasurement(const MeasurementPackage& measurement)
 
   double delta_t = (measurement.timestamp_ - time_us_) / c_microsecondsPerSecond;
 
-  std::cout << "DEBUG: delta_t = " << delta_t << std::endl;
-
   const auto Xsig_pred = Prediction(delta_t);
-
-  std::cout << "DEBUG: Xsig_pred = " << Xsig_pred << std::endl;
 
   // Switch between radar and lidar measurements.
   if (measurement.sensor_type_ == MeasurementPackage::RADAR)
@@ -139,8 +131,6 @@ void UKF::ProcessMeasurement(const MeasurementPackage& measurement)
  */
 MatrixXd UKF::Prediction(double delta_t)
 {
-  std::cout << "DEBUG: " << __func__ << std::endl;
-
   // Estimate the object's location.
 
   const auto Xsig_pred = PredictSigmaPoints(delta_t);
@@ -152,8 +142,6 @@ MatrixXd UKF::Prediction(double delta_t)
 
 MatrixXd UKF::PredictSigmaPoints(double delta_t)
 {
-  std::cout << "DEBUG: " << __func__ << std::endl;
-
   const auto Xsig_aug = GenerateAugmentedSigmaPoints();
 
   auto Xsig_pred = MatrixXd(n_x_, 2 * n_aug_ + 1);
@@ -210,8 +198,6 @@ MatrixXd UKF::PredictSigmaPoints(double delta_t)
 
 static void NormalizeAngle(double& angle)
 {
-  std::cout << "DEBUG: " << __func__ << angle << std::endl;
-
   static const double two_pi = 2 * M_PI;
 
   // Shift from [-pi, pi] to [0, 2pi].
@@ -226,8 +212,6 @@ static void NormalizeAngle(double& angle)
 
 void UKF::PredictMeanAndCovariance(const MatrixXd& Xsig_pred)
 {
-  std::cout << "DEBUG: " << __func__ << std::endl;
-
   // Predicted state mean
   x_.fill(0.0);
   // Iterate over sigma points.
@@ -252,8 +236,6 @@ void UKF::PredictMeanAndCovariance(const MatrixXd& Xsig_pred)
 
 MatrixXd UKF::GenerateSigmaPoints()
 {
-  std::cout << "DEBUG: " << __func__ << std::endl;
-
   // Create sigma point matrix.
   MatrixXd Xsig = MatrixXd(n_x_, 2 * n_x_ + 1);
 
@@ -275,8 +257,6 @@ MatrixXd UKF::GenerateSigmaPoints()
 
 MatrixXd UKF::GenerateAugmentedSigmaPoints()
 {
-  std::cout << "DEBUG: " << __func__ << std::endl;
-
   // Create augmented mean vector.
   VectorXd x_aug = VectorXd(n_aug_);
 
@@ -308,17 +288,11 @@ MatrixXd UKF::GenerateAugmentedSigmaPoints()
     Xsig_aug.col(i + 1 + n_aug_) = x_aug - sqrt(lambda_ + n_aug_) * L.col(i);
   }
 
-  std::cout << "DEBUG: return " << __func__ << std::endl;
-
   return Xsig_aug;
 }
 
 VectorXd UKF::GetMeanPredictedMeasurement(const MatrixXd& Zsig, int n_z)
 {
-  std::cout << "DEBUG: " << __func__ << std::endl;
-
-  std::cout << "DEBUG: Zsig = " << Zsig << std::endl;
-
   // Mean predicted measurement
   VectorXd z_pred = VectorXd(n_z);
   z_pred.fill(0.0);
@@ -332,8 +306,6 @@ VectorXd UKF::GetMeanPredictedMeasurement(const MatrixXd& Zsig, int n_z)
 
 MatrixXd UKF::TransformSigmaPointsToLidarSpace(const MatrixXd& Xsig_pred)
 {
-  std::cout << "DEBUG: " << __func__ << std::endl;
-
   MatrixXd Zsig = MatrixXd(c_lidarMeasurementSize, 2 * n_aug_ + 1);
 
   // Transform sigma points into measurement space
@@ -359,8 +331,6 @@ MatrixXd UKF::TransformSigmaPointsToLidarSpace(const MatrixXd& Xsig_pred)
  */
 void UKF::UpdateLidar(const MeasurementPackage& measurement, const MatrixXd& Xsig_pred)
 {
-  std::cout << "DEBUG: " << __func__ << std::endl;
-
   // Use lidar data to update the belief about the object's position.
   // Modify the state vector, x_, and covariance, P_.
 
@@ -390,8 +360,6 @@ void UKF::UpdateLidar(const MeasurementPackage& measurement, const MatrixXd& Xsi
 
 MatrixXd UKF::TransformSigmaPointsToRadarSpace(const MatrixXd& Xsig_pred)
 {
-  std::cout << "DEBUG: " << __func__ << std::endl;
-
   MatrixXd Zsig = MatrixXd(c_radarMeasurementSize, 2 * n_aug_ + 1);
 
   // Transform sigma points into measurement space
@@ -411,7 +379,7 @@ MatrixXd UKF::TransformSigmaPointsToRadarSpace(const MatrixXd& Xsig_pred)
     if (fabs(c1) < 0.0001)
     {
       c1 = 0.0001;
-      std::cout << "DEBUG: Avoided dvision by zero." << std::endl;
+      std::cout << "Note: Avoided division by zero." << std::endl;
     }
 
     // Measurement model
@@ -432,11 +400,6 @@ MatrixXd UKF::CalculateMeasurementCovariance(const MatrixXd& Zsig,
                                              int n_z,
                                              const int* angle_index)
 {
-  std::cout << "DEBUG: " << __func__ << std::endl;
-
-  std::cout << "DEBUG: z_pred = " << z_pred << std::endl;
-  std::cout << "DEBUG: R = " << R << std::endl;
-
   // Measurement covariance matrix S
   MatrixXd S = MatrixXd(n_z, n_z);
   S.fill(0.0);
@@ -466,8 +429,6 @@ MatrixXd UKF::CalculateCrossCorrelation(const MatrixXd& Zsig,
                                         int n_z,
                                         const int* angle_index)
 {
-  std::cout << "DEBUG: " << __func__ << std::endl;
-
   // Create matrix for cross correlation Tc.
   MatrixXd Tc = MatrixXd(n_x_, n_z);
 
@@ -500,11 +461,6 @@ void UKF::UpdateFromMeasurement(const MatrixXd& Tc,
                                 const VectorXd& raw_measurements,
                                 const int* angle_index)
 {
-  std::cout << "DEBUG: " << __func__ << std::endl;
-
-  std::cout << "DEBUG: Tc = " << Tc << std::endl;
-  std::cout << "DEBUG: S = " << S << std::endl;
-
   // Kalman gain K
   const MatrixXd K = Tc * S.inverse();
 
@@ -516,11 +472,8 @@ void UKF::UpdateFromMeasurement(const MatrixXd& Tc,
     NormalizeAngle(z_diff(*angle_index));
   }
 
-  std::cout << "DEBUG: z_diff = " << K << std::endl;
-
   // Update state mean and covariance matrix.
   x_ = x_ + K * z_diff;
-  std::cout << "DEBUG: K = " << K << std::endl;
   P_ = P_ - K * S * K.transpose();
 }
 
@@ -530,8 +483,6 @@ void UKF::UpdateFromMeasurement(const MatrixXd& Tc,
  */
 void UKF::UpdateRadar(const MeasurementPackage& measurement, const MatrixXd& Xsig_pred)
 {
-  std::cout << "DEBUG: " << __func__ << std::endl;
-
   // Use radar data to update the belief about the object's position.
   // Modify the state vector, x_, and covariance, P_.
 
