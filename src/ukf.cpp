@@ -14,7 +14,8 @@ static const int c_lidarMeasurementSize = 2;
 /**
  * Initializes Unscented Kalman filter
  */
-UKF::UKF() {
+UKF::UKF()
+{
   // If this is false, laser measurements will be ignored (except during init)
   use_laser_ = true;
 

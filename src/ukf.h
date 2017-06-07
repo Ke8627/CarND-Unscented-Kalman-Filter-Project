@@ -10,7 +10,8 @@
 using Eigen::MatrixXd;
 using Eigen::VectorXd;
 
-class UKF {
+class UKF
+{
 public:
 
   // initially set to false, set to true in first call of ProcessMeasurement
