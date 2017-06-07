@@ -33,7 +33,7 @@ UKF::UKF() {
 
   // TODO: Improve P_ initialization.
   // Initial covariance matrix
-  P_ = MatrixXd::Identity(n_x_, n_x_);
+  P_ = MatrixXd::Identity(n_x_, n_x_) / 5;
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
   std_a_ = 2;
@@ -95,6 +95,8 @@ void UKF::ProcessMeasurement(const MeasurementPackage& measurement)
 {
   std::cout << "DEBUG: " << __func__ << std::endl;
 
+  std::cout << "DEBUG: x_ = " << x_ << std::endl;
+
   if (!is_initialized_)
   {
     if (measurement.sensor_type_ == MeasurementPackage::RADAR)
@@ -115,9 +117,15 @@ void UKF::ProcessMeasurement(const MeasurementPackage& measurement)
     return;
   }
 
-  double delta_t = measurement.timestamp_ - time_us_;
+  static const double c_microsecondsPerSecond = 1000000;
+
+  double delta_t = (measurement.timestamp_ - time_us_) / c_microsecondsPerSecond;
+
+  std::cout << "DEBUG: delta_t = " << delta_t << std::endl;
 
   auto Xsig_pred = Prediction(delta_t);
+
+  std::cout << "DEBUG: Xsig_pred = " << Xsig_pred << std::endl;
 
   // Switch between radar and lidar measurements.
   if (measurement.sensor_type_ == MeasurementPackage::RADAR)
@@ -314,6 +322,10 @@ MatrixXd UKF::GenerateAugmentedSigmaPoints()
 
 VectorXd UKF::GetMeanPredictedMeasurement(const MatrixXd& Zsig, int n_z)
 {
+  std::cout << "DEBUG: " << __func__ << std::endl;
+
+  std::cout << "DEBUG: Zsig = " << Zsig << std::endl;
+
   // Mean predicted measurement
   VectorXd z_pred = VectorXd(n_z);
   z_pred.fill(0.0);
@@ -427,6 +439,11 @@ MatrixXd UKF::CalculateMeasurementCovariance(const MatrixXd& Zsig,
                                              int n_z,
                                              int* angle_index)
 {
+  std::cout << "DEBUG: " << __func__ << std::endl;
+
+  std::cout << "DEBUG: z_pred = " << z_pred << std::endl;
+  std::cout << "DEBUG: R = " << R << std::endl;
+
   // Measurement covariance matrix S
   MatrixXd S = MatrixXd(n_z, n_z);
   S.fill(0.0);
@@ -456,6 +473,8 @@ MatrixXd UKF::CalculateCrossCorrelation(const MatrixXd& Zsig,
                                         int n_z,
                                         int* angle_index)
 {
+  std::cout << "DEBUG: " << __func__ << std::endl;
+
   // Create matrix for cross correlation Tc.
   MatrixXd Tc = MatrixXd(n_x_, n_z);
 
@@ -488,6 +507,11 @@ void UKF::UpdateFromMeasurement(const MatrixXd& Tc,
                                 const VectorXd& raw_measurements,
                                 int* angle_index)
 {
+  std::cout << "DEBUG: " << __func__ << std::endl;
+
+  std::cout << "DEBUG: Tc = " << Tc << std::endl;
+  std::cout << "DEBUG: S = " << S << std::endl;
+
   // Kalman gain K
   MatrixXd K = Tc * S.inverse();
 
@@ -499,8 +523,11 @@ void UKF::UpdateFromMeasurement(const MatrixXd& Tc,
     NormalizeAngle(z_diff(*angle_index));
   }
 
+  std::cout << "DEBUG: z_diff = " << K << std::endl;
+
   // Update state mean and covariance matrix.
   x_ = x_ + K * z_diff;
+  std::cout << "DEBUG: K = " << K << std::endl;
   P_ = P_ - K * S * K.transpose();
 }
 
