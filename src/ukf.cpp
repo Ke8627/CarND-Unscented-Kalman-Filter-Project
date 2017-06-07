@@ -204,44 +204,6 @@ MatrixXd UKF::PredictSigmaPoints(double delta_t)
   return Xsig_pred;
 }
 
-static void NormalizeAngle(double& angle)
-{
-  static const double two_pi = 2 * M_PI;
-
-  // Shift from [-pi, pi] to [0, 2pi].
-  angle += M_PI;
-
-  // Normalize to [0, 2pi].
-  double remainder = fmod(angle, two_pi);
-
-  // Shift from [0, 2pi] to [-pi, pi].
-  angle = remainder - M_PI;
-}
-
-void UKF::PredictMeanAndCovariance(const MatrixXd& Xsig_pred)
-{
-  // Predicted state mean
-  x_.fill(0.0);
-  // Iterate over sigma points.
-  for (int i = 0; i < 2 * n_aug_ + 1; i++)
-  {
-    x_ = x_ + weights_(i) * Xsig_pred.col(i);
-  }
-
-  // Predicted state covariance matrix
-  P_.fill(0.0);
-  // Iterate over sigma points.
-  for (int i = 0; i < 2 * n_aug_ + 1; i++)
-  {
-    // Calculate state difference.
-    VectorXd x_diff = Xsig_pred.col(i) - x_;
-
-    NormalizeAngle(x_diff(3));
-
-    P_ = P_ + weights_(i) * x_diff * x_diff.transpose();
-  }
-}
-
 MatrixXd UKF::GenerateAugmentedSigmaPoints()
 {
   // Create augmented mean vector.
@@ -276,6 +238,30 @@ MatrixXd UKF::GenerateAugmentedSigmaPoints()
   }
 
   return Xsig_aug;
+}
+
+void UKF::PredictMeanAndCovariance(const MatrixXd& Xsig_pred)
+{
+  // Predicted state mean
+  x_.fill(0.0);
+  // Iterate over sigma points.
+  for (int i = 0; i < 2 * n_aug_ + 1; i++)
+  {
+    x_ = x_ + weights_(i) * Xsig_pred.col(i);
+  }
+
+  // Predicted state covariance matrix
+  P_.fill(0.0);
+  // Iterate over sigma points.
+  for (int i = 0; i < 2 * n_aug_ + 1; i++)
+  {
+    // Calculate state difference.
+    VectorXd x_diff = Xsig_pred.col(i) - x_;
+
+    NormalizeAngle(x_diff(3));
+
+    P_ = P_ + weights_(i) * x_diff * x_diff.transpose();
+  }
 }
 
 VectorXd UKF::GetMeanPredictedMeasurement(const MatrixXd& Zsig, int n_z)
@@ -500,3 +486,18 @@ void UKF::UpdateRadar(const MeasurementPackage& measurement, const MatrixXd& Xsi
                         measurement.raw_measurements_,
                         &angle_index);
 }
+
+void UKF::NormalizeAngle(double& angle)
+{
+  static const double two_pi = 2 * M_PI;
+
+  // Shift from [-pi, pi] to [0, 2pi].
+  angle += M_PI;
+
+  // Normalize to [0, 2pi].
+  double remainder = fmod(angle, two_pi);
+
+  // Shift from [0, 2pi] to [-pi, pi].
+  angle = remainder - M_PI;
+}
+
