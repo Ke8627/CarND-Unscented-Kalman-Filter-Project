@@ -31,7 +31,6 @@ UKF::UKF() {
   // Initial state vector
   x_ = VectorXd(n_x_);
 
-  // TODO: Improve P_ initialization.
   // Initial covariance matrix
   P_ = MatrixXd::Identity(n_x_, n_x_) / 5;
 
@@ -76,13 +75,6 @@ UKF::UKF() {
   R_lidar_ = MatrixXd(c_lidarMeasurementSize, c_lidarMeasurementSize);
   R_lidar_ << std_laspx_ * std_laspx_, 0,
               0, std_laspy_ * std_laspy_;
-  /**
-  TODO:
-
-  Complete the initialization. See ukf.h for other member properties.
-
-  Hint: one or more values initialized above might be wildly off...
-  */
 }
 
 UKF::~UKF() {}
